@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.shinefan.fooerp.mapper.RoleMapper">
+    <resultMap id="roleResultMap" type="cn.shinefan.fooerp.model.Role">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+    </resultMap>
+    
+    <select id="findById" resultMap="roleResultMap">
+        SELECT id, name 
+        FROM role 
+        WHERE id = #{id}
+    </select>
+    
+    <select id="findByName" resultMap="roleResultMap">
+        SELECT id, name 
+        FROM role 
+        WHERE name = #{name}
+    </select>
+    
+    <select id="findRolesByUserId" resultMap="roleResultMap">
+        SELECT r.id, r.name 
+        FROM role r 
+        JOIN users_roles ur ON r.id = ur.role_id 
+        WHERE ur.user_id = #{userId}
+    </select>
+    
+    <insert id="insertRole" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO role (name) 
+        VALUES (#{name})
+    </insert>
+</mapper>

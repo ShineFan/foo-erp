@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.shinefan.fooerp.mapper.UserMapper">
+    <resultMap id="userResultMap" type="cn.shinefan.fooerp.model.User">
+        <id property="id" column="id"/>
+        <result property="firstName" column="first_name"/>
+        <result property="lastName" column="last_name"/>
+        <result property="email" column="email"/>
+        <result property="password" column="password"/>
+        <collection property="roles" ofType="cn.shinefan.fooerp.model.Role" 
+                    select="cn.shinefan.fooerp.mapper.RoleMapper.findRolesByUserId" column="id"/>
+    </resultMap>
+    
+    <select id="findByEmail" resultMap="userResultMap">
+        SELECT id, first_name, last_name, email, password 
+        FROM users 
+        WHERE email = #{email}
+    </select>
+    
+    <insert id="insert" parameterType="cn.shinefan.fooerp.model.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (first_name, last_name, email, password)
+        VALUES (#{firstName}, #{lastName}, #{email}, #{password})
+    </insert>
+    
+    <insert id="insertUserRole">
+        INSERT INTO users_roles (user_id, role_id) 
+        VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <select id="findById" resultType="cn.shinefan.fooerp.model.User">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+    <update id="update" parameterType="cn.shinefan.fooerp.model.User">
+        UPDATE users
+        SET first_name = #{firstName},
+            last_name = #{lastName},
+            email = #{email},
+            password = #{password}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+</mapper>
