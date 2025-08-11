@@ -38,9 +38,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User save(UserRegistrationDto registrationDto) {
         // Create user object
-        User user = new User(registrationDto.getFirstName(),
-                registrationDto.getLastName(), registrationDto.getEmail(),
-                passwordEncoder.encode(registrationDto.getPassword()), null);
+        User user = new User();
+        user.setFirstName(registrationDto.getFirstName());
+        user.setLastName(registrationDto.getLastName());
+        user.setEmail(registrationDto.getEmail());
+        user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
 
         // Insert user
         userMapper.insert(user);

@@ -1,19 +1,27 @@
 package cn.shinefan.fooerp.model;
 
+import com.baomidou.mybatisplus.annotation.*;
 import java.util.Collection;
 
+@TableName("users")
 public class User {
 
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    @TableField("first_name")
     private String firstName;
 
+    @TableField("last_name")
     private String lastName;
 
+    @TableField("email")
     private String email;
 
+    @TableField("password")
     private String password;
 
+    @TableField(exist = false)
     private Collection<Role> roles;
 
     public User() {

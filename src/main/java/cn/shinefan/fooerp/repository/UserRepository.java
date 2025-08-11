@@ -5,6 +5,8 @@ import cn.shinefan.fooerp.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * Repository layer that uses MyBatis mapper
  */
