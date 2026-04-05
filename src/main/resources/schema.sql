@@ -65,3 +65,35 @@ CREATE TABLE IF NOT EXISTS product (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 订单表
+CREATE TABLE IF NOT EXISTS orders (
+    id BIGINT NOT NULL COMMENT '订单ID',
+    order_no VARCHAR(64) NOT NULL COMMENT '订单编号',
+    customer_id BIGINT NOT NULL COMMENT '客户ID',
+    customer_name VARCHAR(128) COMMENT '客户名称',
+    total_amount DECIMAL(19,2) DEFAULT 0 COMMENT '订单总金额',
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '订单状态',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_order_no` (`order_no`),
+    INDEX `idx_customer_id` (`customer_id`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';
+
+-- 订单明细表
+CREATE TABLE IF NOT EXISTS order_item (
+    id BIGINT NOT NULL COMMENT '明细ID',
+    order_id BIGINT NOT NULL COMMENT '订单ID',
+    product_id BIGINT NOT NULL COMMENT '产品ID',
+    product_name VARCHAR(128) COMMENT '产品名称',
+    price DECIMAL(19,2) NOT NULL COMMENT '单价',
+    quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
+    subtotal DECIMAL(19,2) NOT NULL COMMENT '小计',
+    PRIMARY KEY (`id`),
+    INDEX `idx_order_id` (`order_id`),
+    INDEX `idx_product_id` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
