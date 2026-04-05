@@ -53,3 +53,15 @@ CREATE TABLE IF NOT EXISTS customer_1 (
   company VARCHAR(255),
   status VARCHAR(50) DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product table (non-sharded)
+CREATE TABLE IF NOT EXISTS product (
+  id BIGINT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  category VARCHAR(100),
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
