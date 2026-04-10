@@ -54,6 +54,22 @@ CREATE TABLE IF NOT EXISTS customer_1 (
   status VARCHAR(50) DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 库存变动记录表
+CREATE TABLE IF NOT EXISTS stock_log (
+    id BIGINT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    before_stock INT NOT NULL,
+    after_stock INT NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    reason VARCHAR(255),
+    operator_id BIGINT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    INDEX idx_product_id (product_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='库存变动记录表';
+
 -- Product table (non-sharded)
 CREATE TABLE IF NOT EXISTS product (
   id BIGINT PRIMARY KEY,
