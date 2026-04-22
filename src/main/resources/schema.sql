@@ -113,3 +113,38 @@ CREATE TABLE IF NOT EXISTS order_item (
     INDEX `idx_order_id` (`order_id`),
     INDEX `idx_product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+
+-- 配送单表
+CREATE TABLE IF NOT EXISTS delivery_order (
+    id BIGINT NOT NULL COMMENT '配送单ID',
+    order_id BIGINT NOT NULL COMMENT '关联订单ID',
+    delivery_no VARCHAR(64) NOT NULL COMMENT '配送单编号',
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '配送状态: PENDING/SHIPPED/IN_TRANSIT/DELIVERED/PARTIAL/RETURNED',
+    delivery_address VARCHAR(255) COMMENT '配送地址',
+    delivery_date DATETIME COMMENT '配送日期',
+    tracking_number VARCHAR(128) COMMENT '追踪号',
+    carrier VARCHAR(128) COMMENT '承运商',
+    carrier_contact VARCHAR(64) COMMENT '承运商联系方式',
+    remark TEXT COMMENT '备注',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_order_id` (`order_id`),
+    INDEX `idx_delivery_no` (`delivery_no`),
+    INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='配送单表';
+
+-- 配送单明细表
+CREATE TABLE IF NOT EXISTS delivery_order_item (
+    id BIGINT NOT NULL COMMENT '明细ID',
+    delivery_order_id BIGINT NOT NULL COMMENT '配送单ID',
+    product_id BIGINT NOT NULL COMMENT '产品ID',
+    product_name VARCHAR(128) COMMENT '产品名称',
+    ordered_quantity INT NOT NULL DEFAULT 0 COMMENT '订单数量',
+    delivered_quantity INT NOT NULL DEFAULT 0 COMMENT '已配送数量',
+    remaining_quantity INT NOT NULL DEFAULT 0 COMMENT '剩余数量',
+    remark TEXT COMMENT '备注',
+    PRIMARY KEY (`id`),
+    INDEX `idx_delivery_order_id` (`delivery_order_id`),
+    INDEX `idx_product_id` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='配送单明细表';
