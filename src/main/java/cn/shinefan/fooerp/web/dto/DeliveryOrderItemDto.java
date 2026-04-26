@@ -1,10 +1,18 @@
 package cn.shinefan.fooerp.web.dto;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 public class DeliveryOrderItemDto {
     private Long id;
     private Long deliveryOrderId;
+
+    @NotNull(message = "productId is required")
     private Long productId;
     private String productName;
+
+    @NotNull(message = "orderedQuantity is required")
+    @Min(value = 1, message = "orderedQuantity must be at least 1")
     private Integer orderedQuantity;
     private Integer deliveredQuantity;
     private Integer remainingQuantity;

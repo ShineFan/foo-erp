@@ -1,13 +1,20 @@
 package cn.shinefan.fooerp.web.dto;
 
+import cn.shinefan.fooerp.model.DeliveryStatus;
+
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class DeliveryOrderDto {
     private Long id;
+
+    @NotNull(message = "orderId is required")
     private Long orderId;
     private String deliveryNo;
-    private String status;
+    private DeliveryStatus status;
+
+    @NotNull(message = "deliveryAddress is required")
     private String deliveryAddress;
     private LocalDateTime deliveryDate;
     private String trackingNumber;
@@ -45,11 +52,11 @@ public class DeliveryOrderDto {
         this.deliveryNo = deliveryNo;
     }
 
-    public String getStatus() {
+    public DeliveryStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DeliveryStatus status) {
         this.status = status;
     }
 

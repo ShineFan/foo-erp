@@ -1,10 +1,11 @@
 package cn.shinefan.fooerp.service;
 
-import cn.shinefan.fooerp.mapper.DeliveryOrderConverter;
+import cn.shinefan.fooerp.converter.DeliveryOrderConverter;
 import cn.shinefan.fooerp.mapper.DeliveryOrderItemMapper;
 import cn.shinefan.fooerp.mapper.DeliveryOrderMapper;
 import cn.shinefan.fooerp.model.DeliveryOrder;
 import cn.shinefan.fooerp.model.DeliveryOrderItem;
+import cn.shinefan.fooerp.model.DeliveryStatus;
 import cn.shinefan.fooerp.util.SnowflakeIdGenerator;
 import cn.shinefan.fooerp.web.dto.DeliveryOrderDto;
 import cn.shinefan.fooerp.web.dto.DeliveryOrderItemDto;
@@ -16,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,15 +46,13 @@ public class DeliveryOrderServiceImpl implements DeliveryOrderService {
         deliveryOrder.setId(idGenerator.nextId());
         deliveryOrder.setOrderId(dto.getOrderId());
         deliveryOrder.setDeliveryNo(generateDeliveryNo());
-        deliveryOrder.setStatus("PENDING");
+        deliveryOrder.setStatus(DeliveryStatus.PENDING);
         deliveryOrder.setDeliveryAddress(dto.getDeliveryAddress());
         deliveryOrder.setDeliveryDate(dto.getDeliveryDate());
         deliveryOrder.setTrackingNumber(dto.getTrackingNumber());
         deliveryOrder.setCarrier(dto.getCarrier());
         deliveryOrder.setCarrierContact(dto.getCarrierContact());
         deliveryOrder.setRemark(dto.getRemark());
-        deliveryOrder.setCreatedAt(LocalDateTime.now());
-        deliveryOrder.setUpdatedAt(LocalDateTime.now());
 
         deliveryOrderMapper.insert(deliveryOrder);
 
@@ -96,48 +98,87 @@ public class DeliveryOrderServiceImpl implements DeliveryOrderService {
         deliveryOrder.setCarrier(dto.getCarrier());
         deliveryOrder.setCarrierContact(dto.getCarrierContact());
         deliveryOrder.setRemark(dto.getRemark());
-        deliveryOrder.setUpdatedAt(LocalDateTime.now());
         deliveryOrderMapper.updateById(deliveryOrder);
 
-        deliveryOrderItemMapper.delete(new QueryWrapper<DeliveryOrderItem>().eq("delivery_order_id", id));
-        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
-            for (DeliveryOrderItemDto itemDto : dto.getItems()) {
-                DeliveryOrderItem item = new DeliveryOrderItem();
-                item.setId(idGenerator.nextId());
-                item.setDeliveryOrderId(id);
-                item.setProductId(itemDto.getProductId());
-                item.setProductName(itemDto.getProductName());
-                item.setOrderedQuantity(itemDto.getOrderedQuantity());
-                item.setDeliveredQuantity(itemDto.getDeliveredQuantity());
-                item.setRemainingQuantity(itemDto.getRemainingQuantity());
-                item.setRemark(itemDto.getRemark());
-                deliveryOrderItemMapper.insert(item);
-            }
+        if (dto.getItems() != null) {
+            updateItems(id, dto.getItems());
         }
 
         return getById(id);
     }
 
-    @Override
-    @Transactional
-    public void delete(Long id) {
-        deliveryOrderItemMapper.delete(new QueryWrapper<DeliveryOrderItem>().eq("delivery_order_id", id));
-        deliveryOrderMapper.deleteById(id);
+    private void updateItems(Long deliveryOrderId, List<DeliveryOrderItemDto> itemDtos) {
+        List<DeliveryOrderItem> existingItems = deliveryOrderItemMapper.findByDeliveryOrderId(deliveryOrderId);
+        Map<Long, DeliveryOrderItem> existingMap = existingItems.stream()
+                .collect(Collectors.toMap(DeliveryOrderItem::getId, i -> i));
+
+        List<Long> dtoItemIds = new ArrayList<>();
+        for (DeliveryOrderItemDto itemDto : itemDtos) {
+            if (itemDto.getId() != null && existingMap.containsKey(itemDto.getId())) {
+                // Update existing item
+                DeliveryOrderItem existing = existingMap.get(itemDto.getId());
+                existing.setProductId(itemDto.getProductId());
+                existing.setProductName(itemDto.getProductName());
+                existing.setOrderedQuantity(itemDto.getOrderedQuantity());
+                existing.setRemark(itemDto.getRemark());
+                // Preserve deliveredQuantity and recalculate remaining
+                existing.setRemainingQuantity(existing.getOrderedQuantity() - existing.getDeliveredQuantity());
+                deliveryOrderItemMapper.updateById(existing);
+                dtoItemIds.add(itemDto.getId());
+            } else {
+                // Insert new item
+                DeliveryOrderItem item = new DeliveryOrderItem();
+                item.setId(idGenerator.nextId());
+                item.setDeliveryOrderId(deliveryOrderId);
+                item.setProductId(itemDto.getProductId());
+                item.setProductName(itemDto.getProductName());
+                item.setOrderedQuantity(itemDto.getOrderedQuantity());
+                item.setDeliveredQuantity(0);
+                item.setRemainingQuantity(itemDto.getOrderedQuantity());
+                item.setRemark(itemDto.getRemark());
+                deliveryOrderItemMapper.insert(item);
+            }
+        }
+
+        // Delete items not in the DTO
+        for (DeliveryOrderItem existing : existingItems) {
+            if (!dtoItemIds.contains(existing.getId())) {
+                deliveryOrderItemMapper.deleteById(existing.getId());
+            }
+        }
     }
 
     @Override
-    public IPage<DeliveryOrderDto> list(int page, int size, String status) {
+    @Transactional
+    public boolean delete(Long id) {
+        DeliveryOrder deliveryOrder = deliveryOrderMapper.selectById(id);
+        if (deliveryOrder == null) {
+            return false;
+        }
+        deliveryOrderItemMapper.delete(new QueryWrapper<DeliveryOrderItem>().eq("delivery_order_id", id));
+        deliveryOrderMapper.deleteById(id);
+        return true;
+    }
+
+    @Override
+    public IPage<DeliveryOrderDto> list(int page, int size, DeliveryStatus status) {
         Page<DeliveryOrder> pageParam = new Page<>(page, size);
         QueryWrapper<DeliveryOrder> wrapper = new QueryWrapper<>();
-        if (status != null && !status.isEmpty()) {
-            wrapper.eq("status", status);
+        if (status != null) {
+            wrapper.eq("status", status.name());
         }
         wrapper.orderByDesc("created_at");
 
         IPage<DeliveryOrder> deliveryOrderPage = deliveryOrderMapper.selectPage(pageParam, wrapper);
 
+        List<Long> orderIds = deliveryOrderPage.getRecords().stream()
+                .map(DeliveryOrder::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, List<DeliveryOrderItem>> itemsMap = batchFetchItems(orderIds);
+
         return deliveryOrderPage.convert(deliveryOrder -> {
-            List<DeliveryOrderItem> items = deliveryOrderItemMapper.findByDeliveryOrderId(deliveryOrder.getId());
+            List<DeliveryOrderItem> items = itemsMap.getOrDefault(deliveryOrder.getId(), Collections.emptyList());
             return DeliveryOrderConverter.toDto(deliveryOrder, items);
         });
     }
@@ -149,9 +190,16 @@ public class DeliveryOrderServiceImpl implements DeliveryOrderService {
         wrapper.orderByDesc("created_at");
 
         List<DeliveryOrder> deliveryOrders = deliveryOrderMapper.selectList(wrapper);
+
+        List<Long> orderIds = deliveryOrders.stream()
+                .map(DeliveryOrder::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, List<DeliveryOrderItem>> itemsMap = batchFetchItems(orderIds);
+
         return deliveryOrders.stream()
                 .map(deliveryOrder -> {
-                    List<DeliveryOrderItem> items = deliveryOrderItemMapper.findByDeliveryOrderId(deliveryOrder.getId());
+                    List<DeliveryOrderItem> items = itemsMap.getOrDefault(deliveryOrder.getId(), Collections.emptyList());
                     return DeliveryOrderConverter.toDto(deliveryOrder, items);
                 })
                 .collect(Collectors.toList());
@@ -159,15 +207,21 @@ public class DeliveryOrderServiceImpl implements DeliveryOrderService {
 
     @Override
     @Transactional
-    public DeliveryOrderDto updateDeliveryStatus(Long id, String status) {
+    public DeliveryOrderDto updateDeliveryStatus(Long id, DeliveryStatus newStatus) {
         DeliveryOrder deliveryOrder = deliveryOrderMapper.selectById(id);
         if (deliveryOrder == null) {
             return null;
         }
-        deliveryOrder.setStatus(status);
-        deliveryOrder.setUpdatedAt(LocalDateTime.now());
 
-        if ("DELIVERED".equals(status)) {
+        DeliveryStatus currentStatus = deliveryOrder.getStatus();
+        if (!currentStatus.canTransitionTo(newStatus)) {
+            throw new IllegalArgumentException(
+                    "Invalid status transition from " + currentStatus + " to " + newStatus);
+        }
+
+        deliveryOrder.setStatus(newStatus);
+
+        if (DeliveryStatus.DELIVERED == newStatus) {
             deliveryOrder.setDeliveryDate(LocalDateTime.now());
         }
 
@@ -175,7 +229,15 @@ public class DeliveryOrderServiceImpl implements DeliveryOrderService {
         return getById(id);
     }
 
+    private Map<Long, List<DeliveryOrderItem>> batchFetchItems(List<Long> deliveryOrderIds) {
+        if (deliveryOrderIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<DeliveryOrderItem> allItems = deliveryOrderItemMapper.findByDeliveryOrderIds(deliveryOrderIds);
+        return allItems.stream().collect(Collectors.groupingBy(DeliveryOrderItem::getDeliveryOrderId));
+    }
+
     private String generateDeliveryNo() {
-        return "DO" + System.currentTimeMillis();
+        return "DO" + idGenerator.nextId();
     }
 }

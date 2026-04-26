@@ -1,9 +1,10 @@
 package cn.shinefan.fooerp.model;
 
+import cn.shinefan.fooerp.config.DeliveryStatusTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 import java.time.LocalDateTime;
 
-@TableName("delivery_order")
+@TableName(value = "delivery_order", autoResultMap = true)
 public class DeliveryOrder {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)
@@ -15,8 +16,8 @@ public class DeliveryOrder {
     @TableField("delivery_no")
     private String deliveryNo;
 
-    @TableField("status")
-    private String status;
+    @TableField(value = "status", typeHandler = DeliveryStatusTypeHandler.class)
+    private DeliveryStatus status;
 
     @TableField("delivery_address")
     private String deliveryAddress;
@@ -36,10 +37,10 @@ public class DeliveryOrder {
     @TableField("remark")
     private String remark;
 
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     public DeliveryOrder() {
@@ -69,11 +70,11 @@ public class DeliveryOrder {
         this.deliveryNo = deliveryNo;
     }
 
-    public String getStatus() {
+    public DeliveryStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DeliveryStatus status) {
         this.status = status;
     }
 

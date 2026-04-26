@@ -1,5 +1,6 @@
 package cn.shinefan.fooerp.web;
 
+import cn.shinefan.fooerp.model.DeliveryStatus;
 import cn.shinefan.fooerp.service.DeliveryOrderService;
 import cn.shinefan.fooerp.web.dto.DeliveryOrderDto;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -21,7 +23,7 @@ public class DeliveryOrderController {
     }
 
     @PostMapping
-    public ResponseEntity<DeliveryOrderDto> create(@RequestBody DeliveryOrderDto dto) {
+    public ResponseEntity<DeliveryOrderDto> create(@Valid @RequestBody DeliveryOrderDto dto) {
         return ResponseEntity.ok(deliveryOrderService.create(dto));
     }
 
@@ -29,7 +31,7 @@ public class DeliveryOrderController {
     public ResponseEntity<IPage<DeliveryOrderDto>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) DeliveryStatus status) {
         return ResponseEntity.ok(deliveryOrderService.list(page, size, status));
     }
 
@@ -48,7 +50,7 @@ public class DeliveryOrderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DeliveryOrderDto> update(@PathVariable Long id, @RequestBody DeliveryOrderDto dto) {
+    public ResponseEntity<DeliveryOrderDto> update(@PathVariable Long id, @Valid @RequestBody DeliveryOrderDto dto) {
         DeliveryOrderDto result = deliveryOrderService.update(id, dto);
         if (result == null) {
             return ResponseEntity.notFound().build();
@@ -58,12 +60,15 @@ public class DeliveryOrderController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        deliveryOrderService.delete(id);
+        boolean deleted = deliveryOrderService.delete(id);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<DeliveryOrderDto> updateStatus(@PathVariable Long id, @RequestParam String status) {
+    public ResponseEntity<DeliveryOrderDto> updateStatus(@PathVariable Long id, @RequestParam DeliveryStatus status) {
         DeliveryOrderDto dto = deliveryOrderService.updateDeliveryStatus(id, status);
         if (dto == null) {
             return ResponseEntity.notFound().build();

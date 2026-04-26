@@ -1,4 +1,4 @@
-package cn.shinefan.fooerp.mapper;
+package cn.shinefan.fooerp.converter;
 
 import cn.shinefan.fooerp.model.DeliveryOrder;
 import cn.shinefan.fooerp.model.DeliveryOrderItem;
